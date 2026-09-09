@@ -1,5 +1,21 @@
 const socket = io();
 
+// ---------- Mobile viewport fix ----------
+// Phone browsers (esp. Android Chrome) resize their address bar in and out
+// as you scroll, which makes "100vh" lie about the real visible height and
+// can push bottom content (like the host controls) off-screen. We measure
+// the real visible height with JS and feed it back in as a CSS variable.
+function setRealViewportHeight() {
+  const vh = window.innerHeight * 0.01;
+  document.documentElement.style.setProperty("--vh", `${vh}px`);
+}
+setRealViewportHeight();
+window.addEventListener("resize", setRealViewportHeight);
+window.addEventListener("orientationchange", setRealViewportHeight);
+if (window.visualViewport) {
+  window.visualViewport.addEventListener("resize", setRealViewportHeight);
+}
+
 // ---------- Elements ----------
 const setupScreen = document.getElementById("setup-screen");
 const gameScreen = document.getElementById("game-screen");
@@ -101,14 +117,24 @@ socket.on("host-hint", ({ message }) => {
   hintTextEl.classList.add("flash");
 });
 
-socket.on("round-end", ({ countryName, winner, points, leaderboard: lb }) => {
+socket.on("round-end", ({ countryName, fact, winner, points, leaderboard: lb }) => {
   stopCountdown();
+  // Snap instantly to full clarity for the reveal, overriding any
+  // in-progress gradual-clear transition so the flag is unmistakably sharp.
+  flagImg.style.transition = "filter .3s ease";
   setBlur(0);
+  flagPlate.classList.add("revealed");
+  setTimeout(() => flagPlate.classList.remove("revealed"), 1200);
+
   if (winner) {
     showToast(`🎯 ${winner} nailed it — ${countryName} (+${points})`, "win");
   } else {
     showToast(`⏱ Time's up — it was ${countryName}`, "reveal");
   }
+
+  hintTextEl.innerHTML = `<strong>${escapeHtml(countryName)}</strong> — ${escapeHtml(fact || "")}`;
+  hintTextEl.classList.remove("flash");
+
   renderLeaderboard(lb);
 });
 

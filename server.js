@@ -98,7 +98,7 @@ function bearingCompass(lat1, lon1, lat2, lon2) {
     Math.sin(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.cos(toRad(lon2 - lon1));
   let brng = (Math.atan2(y, x) * 180) / Math.PI;
   brng = (brng + 360) % 360;
-  const dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+  const dirs = ["North", "North East", "East", "South East", "South", "South West", "West", "North West"];
   return dirs[Math.round(brng / 45) % 8];
 }
 
@@ -172,6 +172,7 @@ function endRound(session, winner) {
   session.socket.emit("round-end", {
     countryName: country.name,
     code: country.code,
+    fact: country.fact,
     winner: winner ? winner.username : null,
     points: winner ? winner.points : 0,
     leaderboard: leaderboard(session),

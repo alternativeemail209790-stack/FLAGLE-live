@@ -127,10 +127,12 @@ body{
 /* ---------------- Game screen ---------------- */
 #game-screen{
   height:100vh;
+  height:calc(var(--vh, 1vh) * 100); /* real mobile viewport height, see app.js */
   display:flex;
   flex-direction:column;
   padding:14px 14px 12px;
   gap:10px;
+  overflow-y:auto; /* safety net: if content ever exceeds the screen, scroll instead of hiding it */
 }
 
 .topbar{
@@ -215,6 +217,11 @@ body{
   border:2px solid var(--navy-line);
   background:var(--navy-panel);
   box-shadow:0 0 0 6px rgba(10,24,38,.6);
+  transition:box-shadow .3s ease, border-color .3s ease;
+}
+.flag-plate.revealed{
+  border-color:var(--mint);
+  box-shadow:0 0 0 6px rgba(111,214,176,.25), 0 0 24px rgba(111,214,176,.35);
 }
 .flag-plate img{
   width:100%; height:100%; object-fit:cover;
@@ -323,10 +330,21 @@ body{
 .host-bar{
   flex-shrink:0;
   display:flex;
+  flex-wrap:wrap;
   gap:8px;
+  position:sticky;
+  bottom:0;
+  background:var(--navy-deep);
+  padding:8px 0 max(8px, env(safe-area-inset-bottom));
+  margin:0 -14px -12px;
+  padding-left:14px;
+  padding-right:14px;
+  border-top:1px solid var(--navy-line);
+  z-index:30;
 }
 .host-bar input{
   flex:1;
+  min-width:0;
   background:var(--navy-panel);
   border:1px solid var(--navy-line);
   border-radius:10px;
