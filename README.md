@@ -6,7 +6,36 @@ web page's screen using TikTok's **Mobile Gaming LIVE** mode.
 
 ---
 
-## Part 1 — Put this project on GitHub (one-time setup)
+## Seeing "Cannot read properties of undefined (reading 'processInitialData')"?
+
+This is a known bug in the chat library's free/no-key connection path. The
+fix is the **free Euler Stream key** described in Part 2 below ("Required
+step — get a free TikTok chat key"). Update `server.js` and `public/app.js`
+to the versions in this folder first (adds auto-retry + clearer errors),
+then add the key. Skip to that section now if you just need the fix.
+
+---
+
+## Already deployed and got a build error? Read this first
+
+If Render's build log showed something like `ETARGET No matching version
+found for tiktok-live-connector@^1.2.4`, that's fixed in this version — the
+library had a version update. You only need to replace **two files** in
+your existing GitHub repo (not start over):
+
+1. Go to your repo on github.com, open **`package.json`**, click the pencil
+   (✏️) icon to edit, delete everything, paste in the new version of that
+   file from this folder, and click **Commit changes**.
+2. Do the same for **`server.js`**.
+3. Render watches your GitHub repo and will automatically start a new
+   deploy within a minute or two. Watch the **Logs** tab on Render — you're
+   looking for `TikTok Flagle Live running on port ...`.
+
+Then jump to **Part 3** below.
+
+---
+
+## Part 1 — Put this project on GitHub (one-time setup, first time only)
 
 1. Go to **github.com**, log in, click the **+** in the top-right → **New repository**.
 2. Name it `flagle-live` (or anything you like). Keep it **Public**. Don't tick
@@ -52,6 +81,26 @@ That's it — your code is now on GitHub.
 > of no visitors, and take ~30–60 seconds to wake back up on the next visit.
 > Open the link a minute or two before you go live so it's already awake.
 > If that wake-up delay ever bothers you, Render's cheapest paid tier removes it.
+
+### Required step — get a free TikTok chat "key" (fixes the connection error)
+
+Reading live chat requires a small signing step handled by a free
+third-party service (Euler Stream). Without your own key, it uses a shared
+demo path that we've found to be unreliable on the current library version
+(this is the cause of errors like "Cannot read properties of undefined").
+**Do this once, it takes about 2 minutes and never needs repeating:**
+
+1. Go to **eulerstream.com**, sign up for a free account (no credit card).
+2. Copy your API key from the dashboard.
+3. On Render, open your service → **Environment** tab → **Add Environment Variable**.
+4. Key: `TIKTOK_SIGN_API_KEY`, Value: *(paste your key)*. Save.
+5. Render redeploys automatically within a minute or two — no code touched.
+6. Your friend uses the same deployed link, so she does **not** need to
+   repeat this step; your one key covers both of you on this deployment.
+
+The app still attempts to connect without this key and will retry a few
+times automatically, but adding the key is the fix if you keep seeing
+connection errors.
 
 ---
 
