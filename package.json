@@ -1,0 +1,17 @@
+{
+  "name": "tiktok-flagle-live",
+  "version": "1.0.0",
+  "description": "TikTok LIVE Flagle - flag guessing game controlled entirely by live chat comments",
+  "main": "server.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5",
+    "tiktok-live-connector": "^1.2.4"
+  }
+}
