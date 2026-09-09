@@ -250,6 +250,17 @@ body{
 .hint-icon{color:var(--amber); font-size:14px;}
 #hint-text.flash{color:var(--amber); }
 
+.debug-strip{
+  flex-shrink:0;
+  display:flex;
+  gap:6px;
+  font-size:11px;
+  color:var(--ink-mid);
+  opacity:.7;
+  padding:0 4px;
+}
+.debug-label{color:var(--amber-dim);}
+
 .board{
   flex:1;
   min-height:0;

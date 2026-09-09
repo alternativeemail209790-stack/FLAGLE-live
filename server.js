@@ -285,11 +285,32 @@ io.on("connection", (socket) => {
 
         connection.on("chat", (data) => {
           try {
-            const commenter = data.user?.uniqueId || data.user?.nickname || "viewer";
-            const text = data.comment || "";
+            // Defensive extraction: different library versions/builds have
+            // exposed the message text and username under different field
+            // names. Try every known shape rather than assuming one.
+            const commenter =
+              data.user?.uniqueId ||
+              data.user?.nickname ||
+              data.uniqueId ||
+              data.nickname ||
+              "viewer";
+            const text =
+              (typeof data.comment === "string" && data.comment) ||
+              (typeof data.content === "string" && data.content) ||
+              (typeof data.text === "string" && data.text) ||
+              (typeof data.message === "string" && data.message) ||
+              "";
+
             session.commentsSeen = (session.commentsSeen || 0) + 1;
-            console.log(`[${clean}] chat #${session.commentsSeen} from ${commenter}: ${text.slice(0, 60)}`);
+            console.log(`[${clean}] chat #${session.commentsSeen} from ${commenter}: "${text}"`);
+            if (session.commentsSeen <= 5) {
+              // Log the full raw shape for the first few messages only,
+              // so we can see the exact field names TikTok is sending.
+              console.log(`[${clean}] raw chat payload keys:`, Object.keys(data));
+            }
+
             socket.emit("chat-heartbeat", { count: session.commentsSeen });
+            socket.emit("debug-last-comment", { username: commenter, text });
             handleGuess(session, commenter, text);
           } catch (e) {
             console.error("Error handling chat event:", e);

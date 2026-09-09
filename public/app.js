@@ -17,6 +17,7 @@ const hintTextEl = document.getElementById("hint-text");
 const commentFeedEl = document.getElementById("comment-feed");
 const leaderboardEl = document.getElementById("leaderboard");
 const toastLayer = document.getElementById("toast-layer");
+const debugLastEl = document.getElementById("debug-last");
 
 const hostForm = document.getElementById("host-form");
 const hostInput = document.getElementById("host-input");
@@ -63,6 +64,10 @@ socket.on("tiktok-status", ({ message }) => {
 
 socket.on("chat-heartbeat", ({ count }) => {
   heartbeatEl.textContent = `🎧 ${count}`;
+});
+
+socket.on("debug-last-comment", ({ username, text }) => {
+  debugLastEl.textContent = `${username}: "${text}"`;
 });
 
 socket.on("tiktok-disconnected", () => {
