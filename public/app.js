@@ -22,6 +22,7 @@ const debugLastEl = document.getElementById("debug-last");
 const hostForm = document.getElementById("host-form");
 const hostInput = document.getElementById("host-input");
 const skipBtn = document.getElementById("skip-btn");
+const hintBtn = document.getElementById("hint-btn");
 
 let countdownInterval = null;
 let maxGuesses = 6;
@@ -79,20 +80,24 @@ socket.on("tiktok-disconnected", () => {
 });
 
 // ---------- Round lifecycle ----------
-socket.on("round-start", ({ code, maxGuesses: mg, roundSeconds, blurLevel }) => {
+socket.on("round-start", ({ code, maxGuesses: mg, roundSeconds }) => {
   maxGuesses = mg;
   flagImg.src = `https://flagcdn.com/w640/${code}.png`;
-  setBlur(blurLevel);
   buildPips(mg, 0);
   hintTextEl.textContent = "Type the country name in chat to guess.";
   hintTextEl.classList.remove("flash");
   startCountdown(roundSeconds);
+  startBlurReveal(roundSeconds);
 });
 
-socket.on("wrong-guess", ({ guessedName, distanceKm, direction, guessesUsed, maxGuesses: mg, blurLevel }) => {
-  setBlur(blurLevel);
+socket.on("wrong-guess", ({ guessedName, distanceKm, direction, guessesUsed, maxGuesses: mg }) => {
   buildPips(mg, guessesUsed);
   hintTextEl.textContent = `${guessedName} is not it — ${distanceKm.toLocaleString()} km away, head ${direction}.`;
+  hintTextEl.classList.add("flash");
+});
+
+socket.on("host-hint", ({ message }) => {
+  hintTextEl.textContent = message;
   hintTextEl.classList.add("flash");
 });
 
@@ -132,12 +137,28 @@ hostForm.addEventListener("submit", (e) => {
 });
 
 skipBtn.addEventListener("click", () => socket.emit("skip-round"));
+hintBtn.addEventListener("click", () => socket.emit("request-hint"));
 
 // ---------- Helpers ----------
-function setBlur(level) {
-  // level 6 = fully blurred, 0 = sharp
-  const px = level * 4.5;
+function setBlur(px) {
   flagPlate.style.setProperty("--blur", `${px}px`);
+}
+
+// Smoothly clears the flag from fully blurred to sharp over the whole
+// round, via a CSS transition — no repeated JS ticking needed, so it
+// stays smooth and light even on a lower-end phone.
+function startBlurReveal(roundSeconds) {
+  const MAX_BLUR_PX = 26;
+  const MIN_BLUR_PX = 0.5; // leave a hint of softness right at reveal
+  flagImg.style.transition = "none";
+  setBlur(MAX_BLUR_PX);
+  // Force the browser to apply the instant reset above before we attach
+  // the transition, otherwise it can animate FROM the old value.
+  void flagImg.offsetWidth;
+  requestAnimationFrame(() => {
+    flagImg.style.transition = `filter ${roundSeconds}s linear`;
+    setBlur(MIN_BLUR_PX);
+  });
 }
 
 function buildPips(total, used) {

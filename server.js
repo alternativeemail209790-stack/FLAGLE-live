@@ -145,6 +145,7 @@ function startRound(session) {
   session.round = {
     country,
     guessesUsed: 0,
+    hintsGiven: 0,
     startedAt: Date.now(),
   };
   session.roundActive = true;
@@ -153,7 +154,6 @@ function startRound(session) {
     code: country.code,
     maxGuesses: MAX_GUESSES,
     roundSeconds: ROUND_SECONDS,
-    blurLevel: 6,
   });
 
   session.round.timer = setTimeout(() => endRound(session, null), ROUND_SECONDS * 1000);
@@ -190,11 +190,8 @@ function handleGuess(session, username, rawText) {
   const target = session.round.country;
 
   if (guessedCountry.code === target.code) {
-    // correct!
-    const guessesUsed = session.round.guessesUsed;
-    const elapsedSec = (Date.now() - session.round.startedAt) / 1000;
-    let points = Math.max(100 - guessesUsed * 12, 20);
-    if (elapsedSec < 8) points += 25; // speed bonus
+    // correct! flat 1 point per correct guess
+    const points = 1;
     session.scores.set(username, (session.scores.get(username) || 0) + points);
 
     session.socket.emit("comment-feed", {
@@ -207,11 +204,10 @@ function handleGuess(session, username, rawText) {
     return;
   }
 
-  // wrong guess -> counts against the shared guess pool, gives a hint
+  // wrong guess -> counts against the shared guess pool, gives a distance/direction hint
   session.round.guessesUsed += 1;
   const dist = haversineKm(guessedCountry.lat, guessedCountry.lng, target.lat, target.lng);
   const dir = bearingCompass(guessedCountry.lat, guessedCountry.lng, target.lat, target.lng);
-  const blurLevel = Math.max(6 - session.round.guessesUsed, 0);
 
   session.socket.emit("comment-feed", {
     username,
@@ -225,7 +221,6 @@ function handleGuess(session, username, rawText) {
     direction: dir,
     guessesUsed: session.round.guessesUsed,
     maxGuesses: MAX_GUESSES,
-    blurLevel,
   });
 
   if (session.round.guessesUsed >= MAX_GUESSES) {
@@ -368,6 +363,22 @@ io.on("connection", (socket) => {
   // Host manual skip
   socket.on("skip-round", () => {
     if (session.roundActive) endRound(session, null);
+  });
+
+  // Host-triggered hint: gets progressively more specific each time it's pressed
+  socket.on("request-hint", () => {
+    if (!session.roundActive || !session.round) return;
+    session.round.hintsGiven = (session.round.hintsGiven || 0) + 1;
+    const c = session.round.country;
+    let message;
+    if (session.round.hintsGiven === 1) {
+      message = `Hint: this flag belongs to a country in ${c.continent}.`;
+    } else if (session.round.hintsGiven === 2) {
+      message = `Hint: the name starts with "${c.name[0].toUpperCase()}".`;
+    } else {
+      message = `Hint: the name has ${c.name.replace(/[^A-Za-z]/g, "").length} letters.`;
+    }
+    session.socket.emit("host-hint", { message });
   });
 
   socket.on("disconnect", () => {

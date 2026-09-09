@@ -148,3 +148,38 @@ connection errors.
 - Everything runs on Render's servers, not your phone — your phone is just
   the screen being broadcast and the place you tap "connect." This keeps
   the game itself smooth even on a lower-end Android device.
+
+---
+
+## Why "comments weren't taken as guesses" happened (for reference)
+
+This is the general pattern behind that bug, useful if you (or another AI)
+ever build a similar live-chat-powered game:
+
+The chat library successfully connected and *fired* an event for every
+comment (confirmed by a live counter added for debugging). But the code
+was reading the comment's text from a single hardcoded field name
+(`data.comment`). Libraries like this one are reverse-engineered and
+frequently rewritten, so the actual shape of the data they hand back can
+drift from what the documentation shows, or vary between versions. The
+result: the event fired, but the text/username pulled out of it was
+`undefined`, so nothing ever matched a valid guess — even though, from the
+outside, it looked like "the app isn't listening at all."
+
+**The fix pattern:**
+1. Add a temporary counter/log that fires on every raw event, independent
+   of whether your matching logic accepts it — this proves whether events
+   are arriving at all.
+2. Log or display the *actual* raw data shape (e.g. `Object.keys(data)`)
+   for the first few events, instead of assuming the documented field name
+   is correct.
+3. Extract the fields you need defensively — try every plausible field
+   name in an OR-chain (`data.comment || data.content || data.text || ...`)
+   rather than one hardcoded one.
+4. Keep a tiny on-screen "last received: username: text" readout during
+   development so you can confirm what's actually being parsed without
+   needing to dig through server logs.
+
+This generalizes to any integration built on an unofficial/reverse-
+engineered API: don't trust the documented payload shape — verify it live,
+and code defensively against it changing again.
