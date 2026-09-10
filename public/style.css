@@ -457,3 +457,54 @@ body{
     opacity:0;
   }
 }
+
+/* Mode selection tabs (setup screen) */
+.mode-tabs{
+  display:flex;
+  gap:6px;
+  margin:16px 0 20px;
+  background:var(--navy-deep);
+  border:1px solid var(--navy-line);
+  border-radius:10px;
+  padding:4px;
+}
+.mode-tab{
+  flex:1;
+  border:none;
+  background:transparent;
+  color:var(--ink-mid);
+  font-family:var(--font-body);
+  font-weight:600;
+  font-size:13px;
+  padding:9px 6px;
+  border-radius:7px;
+  cursor:pointer;
+  transition:background .15s ease, color .15s ease;
+}
+.mode-tab.active{
+  background:var(--amber);
+  color:#241706;
+}
+.mode-panel{}
+
+/* Mode badge (game screen topbar, replaces the old live-only dot) */
+.mode-badge{
+  font-family:var(--font-head);
+  font-weight:700;
+  font-size:10.5px;
+  letter-spacing:.06em;
+  padding:3px 8px;
+  border-radius:999px;
+  background:var(--coral);
+  color:#2a0f0a;
+}
+.mode-badge.test{ background:var(--amber); color:#241706; }
+.mode-badge.offline{ background:var(--mint); color:#04241a; }
+.mode-badge.live{
+  animation:pulse-badge 1.8s infinite;
+}
+@keyframes pulse-badge{
+  0%{ box-shadow:0 0 0 0 rgba(239,122,99,.55); }
+  70%{ box-shadow:0 0 0 6px rgba(239,122,99,0); }
+  100%{ box-shadow:0 0 0 0 rgba(239,122,99,0); }
+}

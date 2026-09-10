@@ -107,11 +107,13 @@ function bearingCompass(lat1, lon1, lat2, lon2) {
 // ----------------------------------------------------------------
 const MAX_GUESSES = 6;
 const ROUND_SECONDS = 45;
+const ROUND_SECONDS_TEST = 15; // shorter rounds for quick iteration in Test Mode
 const REVEAL_PAUSE_MS = 6000;
 
 function newSession(socket) {
   return {
     socket,
+    mode: "live", // "live" | "test" | "offline"
     tiktokConnection: null,
     tiktokUsername: null,
     scores: new Map(), // username -> points
@@ -142,6 +144,7 @@ function leaderboard(session) {
 function startRound(session) {
   clearRoundTimer(session);
   const country = pickCountry(session);
+  const roundSeconds = session.mode === "test" ? ROUND_SECONDS_TEST : ROUND_SECONDS;
   session.round = {
     country,
     guessesUsed: 0,
@@ -153,10 +156,13 @@ function startRound(session) {
   session.socket.emit("round-start", {
     code: country.code,
     maxGuesses: MAX_GUESSES,
-    roundSeconds: ROUND_SECONDS,
+    roundSeconds,
+    // Test Mode only: show the answer on-screen for fast QA. Never sent
+    // in live or offline mode.
+    answer: session.mode === "test" ? country.name : undefined,
   });
 
-  session.round.timer = setTimeout(() => endRound(session, null), ROUND_SECONDS * 1000);
+  session.round.timer = setTimeout(() => endRound(session, null), roundSeconds * 1000);
 }
 
 function clearRoundTimer(session) {
@@ -236,6 +242,7 @@ io.on("connection", (socket) => {
   const session = newSession(socket);
 
   socket.on("connect-tiktok", async ({ username }) => {
+    session.mode = "live";
     if (!username || typeof username !== "string") {
       socket.emit("tiktok-error", { message: "Please enter a valid TikTok username." });
       return;
@@ -266,7 +273,7 @@ io.on("connection", (socket) => {
         session.commentsSeen = 0;
 
         await connection.connect();
-        socket.emit("tiktok-connected", { username: clean });
+        socket.emit("session-started", { mode: "live", label: "@" + clean });
 
         // Watchdog: if we haven't heard a single chat event 25s after
         // connecting, tell the host — this usually means the WebSocket
@@ -353,6 +360,22 @@ io.on("connection", (socket) => {
       friendly = `Could not connect after ${MAX_ATTEMPTS} tries (${lastErr?.name || "error"}: ${raw}). Double check the username and that you're already LIVE, then try again.`;
     }
     socket.emit("tiktok-error", { message: friendly });
+  });
+
+  // Test Mode / Offline Mode: no TikTok connection at all — the round
+  // starts immediately and the only source of guesses is the host input
+  // box below (handled by host-comment).
+  socket.on("start-local-mode", ({ mode }) => {
+    if (mode !== "test" && mode !== "offline") return;
+    session.mode = mode;
+    if (session.tiktokConnection) {
+      try { session.tiktokConnection.disconnect(); } catch (e) {}
+      session.tiktokConnection = null;
+    }
+    const label = mode === "test" ? "Test Mode" : "Offline Mode";
+    session.tiktokUsername = label;
+    socket.emit("session-started", { mode, label });
+    startRound(session);
   });
 
   // Host typing directly into the on-screen box (test / answer / host-guess)

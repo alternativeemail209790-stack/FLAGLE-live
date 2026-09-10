@@ -22,9 +22,16 @@ const gameScreen = document.getElementById("game-screen");
 const usernameInput = document.getElementById("tiktok-username");
 const connectBtn = document.getElementById("connect-btn");
 const setupStatus = document.getElementById("setup-status");
+const modeTabsEl = document.getElementById("mode-tabs");
+const livePanel = document.getElementById("live-panel");
+const testPanel = document.getElementById("test-panel");
+const offlinePanel = document.getElementById("offline-panel");
+const startTestBtn = document.getElementById("start-test-btn");
+const startOfflineBtn = document.getElementById("start-offline-btn");
 
 const liveUsernameEl = document.getElementById("live-username");
 const heartbeatEl = document.getElementById("heartbeat");
+const modeBadgeEl = document.getElementById("mode-badge");
 const roundTimerEl = document.getElementById("round-timer");
 const flagImg = document.getElementById("flag-image");
 const flagPlate = document.querySelector(".flag-plate");
@@ -33,6 +40,7 @@ const hintTextEl = document.getElementById("hint-text");
 const commentFeedEl = document.getElementById("comment-feed");
 const leaderboardEl = document.getElementById("leaderboard");
 const toastLayer = document.getElementById("toast-layer");
+const debugStripEl = document.getElementById("debug-strip");
 const debugLastEl = document.getElementById("debug-last");
 
 const hostForm = document.getElementById("host-form");
@@ -42,6 +50,17 @@ const hintBtn = document.getElementById("hint-btn");
 
 let countdownInterval = null;
 let maxGuesses = 6;
+
+// ---------- Mode tabs ----------
+const modePanels = { live: livePanel, test: testPanel, offline: offlinePanel };
+modeTabsEl.addEventListener("click", (e) => {
+  const btn = e.target.closest(".mode-tab");
+  if (!btn) return;
+  const mode = btn.dataset.mode;
+  document.querySelectorAll(".mode-tab").forEach((t) => t.classList.toggle("active", t === btn));
+  Object.entries(modePanels).forEach(([m, panel]) => panel.classList.toggle("hidden", m !== mode));
+  setupStatus.textContent = "";
+});
 
 // ---------- Setup screen ----------
 connectBtn.addEventListener("click", () => {
@@ -57,11 +76,29 @@ connectBtn.addEventListener("click", () => {
   socket.emit("connect-tiktok", { username });
 });
 
-socket.on("tiktok-connected", ({ username }) => {
-  setupStatus.textContent = "Connected! Starting the game…";
+startTestBtn.addEventListener("click", () => {
+  setupStatus.textContent = "Starting test round…";
+  setupStatus.className = "setup-status";
+  socket.emit("start-local-mode", { mode: "test" });
+});
+
+startOfflineBtn.addEventListener("click", () => {
+  setupStatus.textContent = "Starting…";
+  setupStatus.className = "setup-status";
+  socket.emit("start-local-mode", { mode: "offline" });
+});
+
+socket.on("session-started", ({ mode, label }) => {
+  setupStatus.textContent = "Ready! Starting the game…";
   setupStatus.className = "setup-status ok";
-  liveUsernameEl.textContent = "@" + username;
+  liveUsernameEl.textContent = mode === "live" ? label : "";
   heartbeatEl.textContent = "🎧 0";
+  heartbeatEl.classList.toggle("hidden", mode !== "live");
+  debugStripEl.classList.toggle("hidden", mode !== "live");
+
+  modeBadgeEl.textContent = mode.toUpperCase();
+  modeBadgeEl.className = "mode-badge " + mode;
+
   setTimeout(() => {
     setupScreen.classList.add("hidden");
     gameScreen.classList.remove("hidden");
@@ -96,7 +133,7 @@ socket.on("tiktok-disconnected", () => {
 });
 
 // ---------- Round lifecycle ----------
-socket.on("round-start", ({ code, maxGuesses: mg, roundSeconds }) => {
+socket.on("round-start", ({ code, maxGuesses: mg, roundSeconds, answer }) => {
   maxGuesses = mg;
   flagImg.src = `https://flagcdn.com/w640/${code}.png`;
   buildPips(mg, 0);
@@ -104,6 +141,11 @@ socket.on("round-start", ({ code, maxGuesses: mg, roundSeconds }) => {
   hintTextEl.classList.remove("flash");
   startCountdown(roundSeconds);
   startBlurReveal(roundSeconds);
+
+  if (answer) {
+    debugStripEl.classList.remove("hidden");
+    debugLastEl.textContent = `TEST — answer: "${answer}"`;
+  }
 });
 
 socket.on("wrong-guess", ({ guessedName, distanceKm, direction, guessesUsed, maxGuesses: mg }) => {
