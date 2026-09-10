@@ -405,3 +405,55 @@ body{
   .board{flex-direction:column;}
   .comment-panel, .leaderboard-panel{flex:1;}
 }
+
+/* Winner celebration banner */
+.winner-banner{
+  position:fixed;
+  top:38%;
+  left:50%;
+  transform:translate(-50%,-50%) scale(.7);
+  z-index:50;
+  background:linear-gradient(135deg, var(--amber), #ffd98a);
+  color:#241706;
+  font-family:var(--font-head);
+  font-weight:700;
+  font-size:clamp(16px, 5vw, 22px);
+  padding:14px 24px;
+  border-radius:16px;
+  box-shadow:0 8px 30px rgba(0,0,0,.35);
+  pointer-events:none;
+  white-space:nowrap;
+  max-width:88vw;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  animation:winner-pop 2.2s ease forwards;
+}
+.winner-banner span{ text-decoration:underline; text-underline-offset:3px; }
+@keyframes winner-pop{
+  0%{ opacity:0; transform:translate(-50%,-50%) scale(.6); }
+  15%{ opacity:1; transform:translate(-50%,-50%) scale(1.08); }
+  25%{ transform:translate(-50%,-50%) scale(1); }
+  80%{ opacity:1; transform:translate(-50%,-50%) scale(1); }
+  100%{ opacity:0; transform:translate(-50%,-50%) scale(.95); }
+}
+
+/* Confetti burst */
+.confetti-piece{
+  position:fixed;
+  width:8px;
+  height:8px;
+  border-radius:2px;
+  z-index:45;
+  pointer-events:none;
+  animation:confetti-fly .9s cubic-bezier(.25,.7,.4,1) forwards;
+}
+@keyframes confetti-fly{
+  0%{
+    transform:translate(0,0) rotate(0deg);
+    opacity:1;
+  }
+  100%{
+    transform:translate(var(--dx), calc(var(--dy) + 160px)) rotate(var(--rot));
+    opacity:0;
+  }
+}

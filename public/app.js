@@ -128,6 +128,7 @@ socket.on("round-end", ({ countryName, fact, winner, points, leaderboard: lb }) 
 
   if (winner) {
     showToast(`🎯 ${winner} nailed it — ${countryName} (+${points})`, "win");
+    celebrateWinner(winner);
   } else {
     showToast(`⏱ Time's up — it was ${countryName}`, "reveal");
   }
@@ -229,6 +230,40 @@ function showToast(text, kind) {
   t.textContent = text;
   toastLayer.appendChild(t);
   setTimeout(() => t.remove(), 2700);
+}
+
+// Lightweight celebration: a big winner-name banner over the flag plus a
+// short confetti burst. Kept cheap on purpose (small fixed particle count,
+// pure CSS transforms, nodes removed right after animating) so it stays
+// smooth even on a lower-end Android phone mid-broadcast.
+function celebrateWinner(username) {
+  const banner = document.createElement("div");
+  banner.className = "winner-banner";
+  banner.innerHTML = `🏆 <span>${escapeHtml(username)}</span> got it!`;
+  document.getElementById("game-screen").appendChild(banner);
+  setTimeout(() => banner.remove(), 2200);
+
+  const colors = ["#F2B84B", "#6FD6B0", "#EF7A63", "#EAF3FB"];
+  const originX = window.innerWidth / 2;
+  const originY = window.innerHeight * 0.32;
+  const PARTICLE_COUNT = 22;
+
+  for (let i = 0; i < PARTICLE_COUNT; i++) {
+    const p = document.createElement("span");
+    p.className = "confetti-piece";
+    const angle = (Math.PI * 2 * i) / PARTICLE_COUNT + Math.random() * 0.4;
+    const distance = 90 + Math.random() * 110;
+    const dx = Math.cos(angle) * distance;
+    const dy = Math.sin(angle) * distance - 40; // slight upward bias
+    p.style.left = `${originX}px`;
+    p.style.top = `${originY}px`;
+    p.style.background = colors[i % colors.length];
+    p.style.setProperty("--dx", `${dx}px`);
+    p.style.setProperty("--dy", `${dy}px`);
+    p.style.setProperty("--rot", `${Math.random() * 540 - 270}deg`);
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 1000);
+  }
 }
 
 function escapeHtml(str) {
