@@ -193,18 +193,35 @@ body{
   align-items:center;
   justify-content:center;
 }
-.radar-ring{
+/* Wireframe-globe grid: the "planet" the radar is scanning. A slow
+   continuous spin sells the sense that it's a rotating world, not just
+   a static decorative circle. */
+.globe-grid{
   position:absolute;
-  border:1px solid var(--navy-line);
-  border-radius:50%;
+  width:100%; height:100%;
+  fill:none;
+  stroke:var(--navy-line);
+  stroke-width:1;
+  animation:globe-spin 46s linear infinite;
 }
-.radar-ring.r1{width:78%; height:78%;}
-.radar-ring.r2{width:100%; height:100%; opacity:.6;}
+.globe-grid .blip{
+  fill:var(--amber);
+  stroke:none;
+  animation:blip-pulse 2.6s ease-in-out infinite;
+}
+.globe-grid .blip:nth-child(6){ animation-delay:.6s; }
+.globe-grid .blip:nth-child(7){ animation-delay:1.2s; }
+.globe-grid .blip:nth-child(8){ animation-delay:1.8s; }
+@keyframes globe-spin{ to{ transform:rotate(360deg); } }
+@keyframes blip-pulse{
+  0%, 100%{ opacity:.25; }
+  50%{ opacity:1; }
+}
 .radar-sweep{
   position:absolute;
   width:100%; height:100%;
   border-radius:50%;
-  background:conic-gradient(from 0deg, rgba(242,184,75,.28), transparent 30%);
+  background:conic-gradient(from 0deg, rgba(242,184,75,.32), transparent 26%);
   animation:spin 4s linear infinite;
 }
 @keyframes spin{to{transform:rotate(360deg);}}
@@ -224,7 +241,7 @@ body{
   box-shadow:0 0 0 6px rgba(111,214,176,.25), 0 0 24px rgba(111,214,176,.35);
 }
 .flag-plate img{
-  width:100%; height:100%; object-fit:cover;
+  width:100%; height:100%; object-fit:contain;
   filter:blur(var(--blur, 18px));
   transition:filter .5s ease;
 }
@@ -507,4 +524,55 @@ body{
   0%{ box-shadow:0 0 0 0 rgba(239,122,99,.55); }
   70%{ box-shadow:0 0 0 6px rgba(239,122,99,0); }
   100%{ box-shadow:0 0 0 0 rgba(239,122,99,0); }
+}
+
+/* Top-10 scorers news-style ticker */
+.ticker-wrap{
+  flex-shrink:0;
+  overflow:hidden;
+  background:var(--navy-panel);
+  border:1px solid var(--navy-line);
+  border-radius:8px;
+  padding:6px 0;
+  white-space:nowrap;
+}
+.ticker-track{
+  display:inline-block;
+  padding-left:100%;
+  font-family:var(--font-head);
+  font-weight:700;
+  font-size:12.5px;
+  color:var(--amber);
+  animation:ticker-scroll 22s linear infinite;
+}
+.ticker-track .tk-rank{ color:var(--ink-mid); font-weight:500; margin-right:4px; }
+.ticker-track .tk-sep{ color:var(--navy-line); margin:0 18px; }
+@keyframes ticker-scroll{
+  from{ transform:translateX(0); }
+  to{ transform:translateX(-100%); }
+}
+
+/* Top Fans panel (Likes / Gifts tabs) */
+.fans-panel{ flex:1; }
+.fans-tabs{
+  display:flex;
+  padding:0;
+  border-bottom:1px solid var(--navy-line);
+}
+.fans-tab{
+  flex:1;
+  border:none;
+  background:transparent;
+  color:var(--ink-mid);
+  font-family:var(--font-head);
+  font-weight:700;
+  font-size:11px;
+  letter-spacing:.04em;
+  padding:10px 6px 8px;
+  cursor:pointer;
+  border-bottom:2px solid transparent;
+}
+.fans-tab.active{
+  color:var(--amber);
+  border-bottom-color:var(--amber);
 }

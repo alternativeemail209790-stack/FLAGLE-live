@@ -38,7 +38,9 @@ const flagPlate = document.querySelector(".flag-plate");
 const guessPipsEl = document.getElementById("guess-pips");
 const hintTextEl = document.getElementById("hint-text");
 const commentFeedEl = document.getElementById("comment-feed");
-const leaderboardEl = document.getElementById("leaderboard");
+const leaderboardEl = document.getElementById("ticker-track");
+const tickerWrapEl = document.getElementById("ticker-wrap");
+const fansListEl = document.getElementById("fans-list");
 const toastLayer = document.getElementById("toast-layer");
 const debugStripEl = document.getElementById("debug-strip");
 const debugLastEl = document.getElementById("debug-last");
@@ -98,6 +100,10 @@ socket.on("session-started", ({ mode, label }) => {
 
   modeBadgeEl.textContent = mode.toUpperCase();
   modeBadgeEl.className = "mode-badge " + mode;
+
+  latestFanStats = { likes: [], gifts: [] };
+  renderFansList();
+  renderLeaderboard(null);
 
   setTimeout(() => {
     setupScreen.classList.add("hidden");
@@ -181,6 +187,39 @@ socket.on("round-end", ({ countryName, fact, winner, points, leaderboard: lb }) 
   renderLeaderboard(lb);
 });
 
+// ---------- Top Fans (Likes / Gifts) ----------
+let latestFanStats = { likes: [], gifts: [] };
+let activeFansTab = "likes";
+
+document.querySelectorAll(".fans-tab").forEach((tab) => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".fans-tab").forEach((t) => t.classList.toggle("active", t === tab));
+    activeFansTab = tab.dataset.tab;
+    renderFansList();
+  });
+});
+
+socket.on("fan-stats", (stats) => {
+  latestFanStats = stats;
+  renderFansList();
+});
+
+function renderFansList() {
+  const list = latestFanStats[activeFansTab] || [];
+  fansListEl.innerHTML = "";
+  if (list.length === 0) {
+    const emptyText = activeFansTab === "likes" ? "No likes yet." : "No gifts yet.";
+    fansListEl.innerHTML = `<li><span style="color:var(--ink-mid)">${emptyText}</span></li>`;
+    return;
+  }
+  list.forEach((entry, i) => {
+    const li = document.createElement("li");
+    const value = activeFansTab === "likes" ? `❤️ ${entry.count}` : `💎 ${entry.value}`;
+    li.innerHTML = `<b>${i + 1}. ${escapeHtml(entry.username)}</b><span class="pts">${value}</span>`;
+    fansListEl.appendChild(li);
+  });
+}
+
 // ---------- Chat feed ----------
 socket.on("comment-feed", ({ username, text, correct }) => {
   const row = document.createElement("div");
@@ -254,16 +293,24 @@ function stopCountdown() {
 }
 
 function renderLeaderboard(list) {
-  leaderboardEl.innerHTML = "";
   if (!list || list.length === 0) {
-    leaderboardEl.innerHTML = `<li><span style="color:var(--ink-mid)">No scores yet — first correct guess takes the lead.</span></li>`;
-    return;
+    leaderboardEl.textContent = "Waiting for the first correct guess…";
+  } else {
+    const items = list
+      .map((e, i) => `<span class="tk-rank">${i + 1}.</span>${escapeHtml(e.username)} — ${e.points}pt`)
+      .join('<span class="tk-sep">•</span>');
+    leaderboardEl.innerHTML = `🏆 Top explorers ${items}`;
   }
-  list.forEach((entry, i) => {
-    const li = document.createElement("li");
-    li.innerHTML = `<b>${i + 1}. ${escapeHtml(entry.username)}</b><span class="pts">${entry.points}</span>`;
-    leaderboardEl.appendChild(li);
-  });
+  restartTickerAnimation();
+}
+
+// Rebuilding ticker content doesn't automatically restart its CSS
+// animation from the beginning — this forces a reflow so updates don't
+// look glitchy mid-scroll.
+function restartTickerAnimation() {
+  leaderboardEl.style.animation = "none";
+  void leaderboardEl.offsetWidth;
+  leaderboardEl.style.animation = "";
 }
 
 function showToast(text, kind) {

@@ -72,9 +72,23 @@
       </div>
     </header>
 
+    <div class="ticker-wrap" id="ticker-wrap">
+      <div class="ticker-track" id="ticker-track">Waiting for the first correct guess…</div>
+    </div>
+
     <div class="radar-wrap">
-      <div class="radar-ring r1"></div>
-      <div class="radar-ring r2"></div>
+      <svg class="globe-grid" id="globe-grid" viewBox="0 0 200 200">
+        <circle cx="100" cy="100" r="97"/>
+        <ellipse cx="100" cy="100" rx="97" ry="38"/>
+        <ellipse cx="100" cy="100" rx="38" ry="97"/>
+        <ellipse cx="100" cy="100" rx="97" ry="70"/>
+        <line x1="3" y1="100" x2="197" y2="100"/>
+        <line x1="100" y1="3" x2="100" y2="197"/>
+        <circle class="blip" cx="60" cy="70" r="2.2"/>
+        <circle class="blip" cx="145" cy="60" r="2.2"/>
+        <circle class="blip" cx="130" cy="150" r="2.2"/>
+        <circle class="blip" cx="55" cy="135" r="2.2"/>
+      </svg>
       <div class="radar-sweep" id="radar-sweep"></div>
       <div class="flag-plate">
         <img id="flag-image" alt="Guess this flag" />
@@ -98,9 +112,12 @@
         <div id="comment-feed" class="comment-feed"></div>
       </div>
 
-      <div class="panel leaderboard-panel">
-        <div class="panel-head">Top explorers</div>
-        <ol id="leaderboard" class="leaderboard"></ol>
+      <div class="panel fans-panel">
+        <div class="panel-head fans-tabs">
+          <button type="button" class="fans-tab active" data-tab="likes">❤️ Likes</button>
+          <button type="button" class="fans-tab" data-tab="gifts">🎁 Gifts</button>
+        </div>
+        <ol id="fans-list" class="leaderboard"></ol>
       </div>
     </div>
 

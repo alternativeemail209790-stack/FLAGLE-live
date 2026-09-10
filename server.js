@@ -117,6 +117,8 @@ function newSession(socket) {
     tiktokConnection: null,
     tiktokUsername: null,
     scores: new Map(), // username -> points
+    likes: new Map(), // username -> total likes sent this session
+    gifts: new Map(), // username -> total diamond value sent this session
     usedCountries: new Set(),
     round: null, // { country, guessesUsed, roundTimer, startedAt }
     roundActive: false,
@@ -135,10 +137,19 @@ function pickCountry(session) {
 }
 
 function leaderboard(session) {
-  return [...session.scores.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 10)
-    .map(([username, points]) => ({ username, points }));
+  return topN(session.scores).map(([username, points]) => ({ username, points }));
+}
+
+// Generic "top 10 by numeric value" helper, reused for scores, likes, gifts.
+function topN(map, n = 10) {
+  return [...map.entries()].sort((a, b) => b[1] - a[1]).slice(0, n);
+}
+
+function fanStats(session) {
+  return {
+    likes: topN(session.likes).map(([username, count]) => ({ username, count })),
+    gifts: topN(session.gifts).map(([username, value]) => ({ username, value })),
+  };
 }
 
 function startRound(session) {
@@ -189,10 +200,13 @@ function endRound(session, winner) {
   }, REVEAL_PAUSE_MS);
 }
 
-function handleGuess(session, username, rawText) {
-  if (!session.roundActive || !session.round) return;
+// Returns true only if this message was the correct winning guess — the
+// caller always shows the message in the chat feed regardless of this
+// return value; this only controls the "correct" (green) styling.
+function processGuess(session, username, rawText) {
+  if (!session.roundActive || !session.round) return false;
   const guessedCountry = findCountryInText(rawText);
-  if (!guessedCountry) return; // not a country guess, ignore (regular chat chatter)
+  if (!guessedCountry) return false; // not a country guess — still shown in chat, just not scored
 
   const target = session.round.country;
 
@@ -200,27 +214,14 @@ function handleGuess(session, username, rawText) {
     // correct! flat 1 point per correct guess
     const points = 1;
     session.scores.set(username, (session.scores.get(username) || 0) + points);
-
-    session.socket.emit("comment-feed", {
-      username,
-      text: rawText,
-      correct: true,
-    });
-
     endRound(session, { username, points });
-    return;
+    return true;
   }
 
   // wrong guess -> counts against the shared guess pool, gives a distance/direction hint
   session.round.guessesUsed += 1;
   const dist = haversineKm(guessedCountry.lat, guessedCountry.lng, target.lat, target.lng);
   const dir = bearingCompass(guessedCountry.lat, guessedCountry.lng, target.lat, target.lng);
-
-  session.socket.emit("comment-feed", {
-    username,
-    text: rawText,
-    correct: false,
-  });
 
   session.socket.emit("wrong-guess", {
     guessedName: guessedCountry.name,
@@ -233,6 +234,7 @@ function handleGuess(session, username, rawText) {
   if (session.round.guessesUsed >= MAX_GUESSES) {
     endRound(session, null);
   }
+  return false;
 }
 
 // ----------------------------------------------------------------
@@ -314,7 +316,14 @@ io.on("connection", (socket) => {
 
             socket.emit("chat-heartbeat", { count: session.commentsSeen });
             socket.emit("debug-last-comment", { username: commenter, text });
-            handleGuess(session, commenter, text);
+
+            // Show every audience message in the live chat panel, not just
+            // ones that happen to match a country — the correctness flag
+            // just controls the green highlight for the winning guess.
+            const isCorrect = text ? processGuess(session, commenter, text) : false;
+            if (text) {
+              socket.emit("comment-feed", { username: commenter, text, correct: isCorrect });
+            }
           } catch (e) {
             console.error("Error handling chat event:", e);
           }
@@ -326,6 +335,51 @@ io.on("connection", (socket) => {
 
         connection.on("streamEnd", () => {
           socket.emit("tiktok-disconnected", { reason: "stream-ended" });
+        });
+
+        // Likes — TikTok sends a running per-tap batch, not a single total,
+        // so we add each batch to that viewer's running session total.
+        connection.on("like", (data) => {
+          try {
+            const liker =
+              data.user?.uniqueId || data.user?.nickname ||
+              data.uniqueId || data.nickname || "viewer";
+            const batch =
+              (typeof data.likeCount === "number" && data.likeCount) ||
+              (typeof data.count === "number" && data.count) ||
+              1;
+            session.likes.set(liker, (session.likes.get(liker) || 0) + batch);
+            socket.emit("fan-stats", fanStats(session));
+          } catch (e) {
+            console.error("Error handling like event:", e);
+          }
+        });
+
+        // Gifts — TikTok streams each "combo" gift as several events while
+        // the sender is actively tapping, then a final one with repeatEnd
+        // true. We only tally on that final event to avoid counting the
+        // same combo multiple times.
+        connection.on("gift", (data) => {
+          try {
+            const isStreakable = typeof data.giftType === "number" ? data.giftType === 1 : false;
+            const repeatEnd = typeof data.repeatEnd === "boolean" ? data.repeatEnd : true;
+            if (isStreakable && !repeatEnd) return; // combo still in progress, wait for the final tick
+
+            const gifter =
+              data.user?.uniqueId || data.user?.nickname ||
+              data.uniqueId || data.nickname || "viewer";
+            const diamondValue =
+              (typeof data.diamondCount === "number" && data.diamondCount) ||
+              (typeof data.diamond_count === "number" && data.diamond_count) ||
+              0;
+            const repeatCount =
+              (typeof data.repeatCount === "number" && data.repeatCount) || 1;
+
+            session.gifts.set(gifter, (session.gifts.get(gifter) || 0) + diamondValue * repeatCount);
+            socket.emit("fan-stats", fanStats(session));
+          } catch (e) {
+            console.error("Error handling gift event:", e);
+          }
         });
 
         connection.on("error", (err) => {
@@ -381,7 +435,8 @@ io.on("connection", (socket) => {
   // Host typing directly into the on-screen box (test / answer / host-guess)
   socket.on("host-comment", ({ text }) => {
     if (!text) return;
-    handleGuess(session, "HOST (You)", text);
+    const isCorrect = processGuess(session, "HOST (You)", text);
+    socket.emit("comment-feed", { username: "HOST (You)", text, correct: isCorrect });
   });
 
   // Host manual skip
