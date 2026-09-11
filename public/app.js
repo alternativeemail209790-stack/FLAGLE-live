@@ -49,9 +49,40 @@ const hostForm = document.getElementById("host-form");
 const hostInput = document.getElementById("host-input");
 const skipBtn = document.getElementById("skip-btn");
 const hintBtn = document.getElementById("hint-btn");
+const fullscreenBtn = document.getElementById("fullscreen-btn");
 
 let countdownInterval = null;
 let maxGuesses = 6;
+
+// ---------- Fullscreen ----------
+if (!document.documentElement.requestFullscreen && !document.documentElement.webkitRequestFullscreen) {
+  fullscreenBtn.style.display = "none"; // not supported on this browser — hide rather than show a dead button
+}
+fullscreenBtn.addEventListener("click", async () => {
+  try {
+    const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement;
+    if (!isFullscreen) {
+      const el = document.documentElement;
+      if (el.requestFullscreen) await el.requestFullscreen();
+      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    } else {
+      if (document.exitFullscreen) await document.exitFullscreen();
+      else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+    }
+  } catch (e) {
+    // Some in-app/webview browsers block fullscreen entirely — fail
+    // quietly rather than breaking the game.
+    console.error("Fullscreen toggle failed:", e);
+  }
+});
+document.addEventListener("fullscreenchange", () => {
+  fullscreenBtn.classList.toggle("active", Boolean(document.fullscreenElement));
+  setRealViewportHeight(); // fullscreen changes the real visible height
+});
+document.addEventListener("webkitfullscreenchange", () => {
+  fullscreenBtn.classList.toggle("active", Boolean(document.webkitFullscreenElement));
+  setRealViewportHeight();
+});
 
 // ---------- Mode tabs ----------
 const modePanels = { live: livePanel, test: testPanel, offline: offlinePanel };

@@ -130,8 +130,8 @@ body{
   height:calc(var(--vh, 1vh) * 100); /* real mobile viewport height, see app.js */
   display:flex;
   flex-direction:column;
-  padding:14px 14px 12px;
-  gap:10px;
+  padding:10px 12px 10px;
+  gap:7px;
   overflow-y:auto; /* safety net: if content ever exceeds the screen, scroll instead of hiding it */
 }
 
@@ -183,12 +183,32 @@ body{
   color:var(--mint);
   opacity:.85;
 }
+.icon-btn{
+  border:1px solid var(--navy-line);
+  background:var(--navy-panel);
+  color:var(--ink-hi);
+  border-radius:8px;
+  width:26px;
+  height:26px;
+  line-height:1;
+  font-size:14px;
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:0;
+}
+.icon-btn.active{
+  background:var(--amber);
+  color:#241706;
+  border-color:var(--amber);
+}
 
 /* Radar / flag reveal */
 .radar-wrap{
   position:relative;
   flex-shrink:0;
-  height:min(30vh, 240px);
+  height:min(25vh, 205px);
   display:flex;
   align-items:center;
   justify-content:center;
@@ -267,8 +287,8 @@ body{
   background:var(--navy-panel);
   border:1px solid var(--navy-line);
   border-radius:10px;
-  padding:10px 14px;
-  font-size:13.5px;
+  padding:7px 12px;
+  font-size:13px;
   color:var(--ink-mid);
 }
 .hint-icon{color:var(--amber); font-size:14px;}
@@ -297,7 +317,7 @@ body{
   border-radius:var(--radius);
   display:flex;
   flex-direction:column;
-  min-height:0;
+  min-height:90px;
   overflow:hidden;
 }
 .comment-panel{flex:1.4;}
@@ -353,9 +373,9 @@ body{
   bottom:0;
   background:var(--navy-deep);
   padding:8px 0 max(8px, env(safe-area-inset-bottom));
-  margin:0 -14px -12px;
-  padding-left:14px;
-  padding-right:14px;
+  margin:0 -12px -10px;
+  padding-left:12px;
+  padding-right:12px;
   border-top:1px solid var(--navy-line);
   z-index:30;
 }
@@ -416,11 +436,26 @@ body{
 @keyframes toast-in{from{opacity:0; transform:translateY(-8px);} to{opacity:1; transform:translateY(0);}}
 @keyframes toast-out{to{opacity:0; transform:translateY(-8px);}}
 
-/* Small phones */
+/* Small phones (narrow width) */
 @media (max-width:360px){
-  .radar-wrap{height:24vh;}
+  .radar-wrap{height:22vh;}
   .board{flex-direction:column;}
-  .comment-panel, .leaderboard-panel{flex:1;}
+  .comment-panel, .fans-panel{flex:1;}
+}
+
+/* Short screens (landscape phones, small handsets, browser chrome eating
+   into the viewport) — shrink the decorative bits first so the live chat
+   and fan panels always keep usable height without the whole page
+   needing to scroll. */
+@media (max-height:680px){
+  .radar-wrap{height:min(20vh, 160px);}
+  .ticker-wrap{padding:4px 0;}
+  .hint-strip{padding:5px 10px; font-size:12px;}
+  #game-screen{gap:6px;}
+}
+@media (max-height:560px){
+  .radar-wrap{height:min(16vh, 130px);}
+  .debug-strip{display:none;}
 }
 
 /* Winner celebration banner */

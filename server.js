@@ -361,7 +361,15 @@ io.on("connection", (socket) => {
         // same combo multiple times.
         connection.on("gift", (data) => {
           try {
-            const isStreakable = typeof data.giftType === "number" ? data.giftType === 1 : false;
+            // Confirmed via the library's own docs: gift specifics live
+            // nested under data.giftDetails in this version, not flat on
+            // data — that nested lookup was missing before, which is why
+            // diamondCount was always 0. Kept the flat fallbacks too in
+            // case a future version moves them back.
+            const giftDetails = data.giftDetails || {};
+            const isStreakable =
+              typeof giftDetails.giftType === "number" ? giftDetails.giftType === 1 :
+              typeof data.giftType === "number" ? data.giftType === 1 : false;
             const repeatEnd = typeof data.repeatEnd === "boolean" ? data.repeatEnd : true;
             if (isStreakable && !repeatEnd) return; // combo still in progress, wait for the final tick
 
@@ -369,6 +377,7 @@ io.on("connection", (socket) => {
               data.user?.uniqueId || data.user?.nickname ||
               data.uniqueId || data.nickname || "viewer";
             const diamondValue =
+              (typeof giftDetails.diamondCount === "number" && giftDetails.diamondCount) ||
               (typeof data.diamondCount === "number" && data.diamondCount) ||
               (typeof data.diamond_count === "number" && data.diamond_count) ||
               0;
@@ -377,6 +386,11 @@ io.on("connection", (socket) => {
 
             session.gifts.set(gifter, (session.gifts.get(gifter) || 0) + diamondValue * repeatCount);
             socket.emit("fan-stats", fanStats(session));
+
+            session.giftsSeen = (session.giftsSeen || 0) + 1;
+            if (session.giftsSeen <= 5) {
+              console.log(`[${clean}] gift #${session.giftsSeen} raw payload keys:`, Object.keys(data), "giftDetails keys:", Object.keys(giftDetails));
+            }
           } catch (e) {
             console.error("Error handling gift event:", e);
           }
