@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+<title>TRAVLE — Live Edition</title>
+<meta name="description" content="A host-controlled TRAVLE geography game built for TikTok Live." />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ============ TOP BAR ============ -->
+  <header class="topbar">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true">
+        <circle cx="20" cy="20" r="17" fill="none" stroke="currentColor" stroke-width="1.6"/>
+        <path d="M20 6 L23 18 L20 34 L17 18 Z" fill="currentColor" opacity="0.9"/>
+        <circle cx="20" cy="20" r="2.4" fill="var(--ink)"/>
+      </svg>
+      <div class="brand-text">
+        <span class="brand-title">TRAVLE</span>
+        <span class="brand-sub">border-hop edition</span>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <a href="/" class="icon-btn" id="homeBtn" title="Choose another game" aria-label="Choose another game">🏠</a>
+      <span id="tiktokBadge" class="badge tiktok-badge" hidden>🎧</span>
+      <span id="modeBadge" class="badge">LIVE</span>
+      <button id="topHintBtn" class="icon-btn" title="Hint: outline (free)" aria-label="Hint">💡</button>
+      <button id="fullscreenBtn" class="icon-btn" title="Full screen" aria-label="Toggle full screen">⛶</button>
+      <button id="legendBtn" class="icon-btn" title="How to play &amp; legend" aria-label="How to play and legend">?</button>
+      <button id="trophyBtn" class="icon-btn" title="Leaderboard" aria-label="Leaderboard">🏆</button>
+      <button id="settingsBtn" class="icon-btn" title="Settings" aria-label="Settings">⚙</button>
+    </div>
+  </header>
+
+  <!-- ============ LEADERBOARD TICKER ============ -->
+  <div class="ticker-bar" id="tickerBar" hidden>
+    <div class="ticker-track" id="tickerTrack"></div>
+  </div>
+
+  <!-- ============ MAIN BOARD ============ -->
+  <main class="board">
+
+    <section class="globe-card" id="globeCard">
+      <div class="globe-toolbar">
+        <button id="globeZoomOut" class="globe-btn" title="Zoom out" aria-label="Zoom out">−</button>
+        <input id="globeZoomSlider" type="range" min="10" max="2000" value="100" class="globe-zoom-slider" aria-label="Globe zoom percent" />
+        <button id="globeZoomIn" class="globe-btn" title="Zoom in" aria-label="Zoom in">+</button>
+        <button id="globeRecenter" class="globe-btn globe-btn-text" title="Recenter on start &amp; target">Recenter</button>
+        <button id="globeExpandBtn" class="globe-btn globe-btn-text" title="Enlarge globe">Enlarge</button>
+      </div>
+      <div class="globe-wrap" id="globeWrap">
+        <div id="globeMount" class="globe-mount"></div>
+        <button id="globeExitBtn" class="globe-exit-btn" aria-label="Exit full screen" title="Exit full screen">✕</button>
+      </div>
+      <p class="globe-caption">Drag to rotate · pinch or use +/− to zoom · tap Enlarge for full screen</p>
+    </section>
+
+    <section class="route-card">
+      <div class="route-meta">
+        <div class="meta-pill">
+          <span class="meta-label">Guesses made</span>
+          <span id="guessesLeft" class="meta-value">–</span>
+        </div>
+        <div class="meta-pill">
+          <span class="meta-label">Optimal length</span>
+          <span id="difficultyLabel" class="meta-value">–</span>
+        </div>
+      </div>
+
+      <div class="route" id="routeTrack"><!-- chain nodes injected by app.js --></div>
+
+      <p class="route-hint">Guess any country that could sit on the trail between the two ends. You can build inward from either side. No guess limit — go for it.</p>
+      <p class="hint-display" id="hintDisplay"></p>
+    </section>
+
+    <section class="feed-card" id="feedCard">
+      <button class="feed-toggle" id="feedToggle" aria-expanded="true">
+        <span>Live activity</span>
+        <span class="feed-chevron" id="feedChevron">▾</span>
+      </button>
+      <ul class="feed-list" id="feedList"></ul>
+    </section>
+
+  </main>
+
+  <!-- ============ HOST CONTROL DOCK ============ -->
+  <footer class="host-dock">
+    <p class="mode-banner" id="modeBanner"></p>
+    <button class="dock-toggle" id="dockToggle" aria-expanded="true">
+      <span>Host controls</span>
+      <span class="feed-chevron" id="dockChevron">▾</span>
+    </button>
+    <div class="dock-collapsible" id="dockCollapsible">
+      <div class="host-row" id="viewerRow">
+        <input id="viewerInput" class="host-input" type="text" placeholder="Viewer name (from chat)" autocomplete="off" />
+      </div>
+      <div class="host-row host-row-guess">
+        <input id="guessInput" class="host-input" type="text" placeholder="Type a country guess…" autocomplete="off" />
+        <button id="submitGuess" class="primary-btn">Guess</button>
+      </div>
+      <div class="host-row host-row-actions">
+        <button id="newRoundBtn" class="ghost-btn">New round</button>
+        <button id="hintOutlineBtn" class="ghost-btn">Hint: outline</button>
+        <button id="hintLettersBtn" class="ghost-btn">Hint: initials</button>
+        <button id="revealBtn" class="ghost-btn">Reveal</button>
+      </div>
+    </div>
+    <p id="hostMsg" class="host-msg" aria-live="polite"></p>
+  </footer>
+
+</div>
+
+<!-- ============ SCRIM ============ -->
+<div class="scrim" id="scrim"></div>
+
+<!-- ============ SETTINGS DRAWER ============ -->
+<aside class="drawer" id="settingsDrawer" aria-hidden="true">
+  <div class="drawer-head">
+    <h2>Settings</h2>
+    <button class="icon-btn" id="closeSettings" aria-label="Close settings">✕</button>
+  </div>
+
+  <div class="drawer-body">
+    <div class="status-card" id="statusCard">
+      <div class="status-row"><span class="status-dot" id="statusModeDot"></span><span id="statusModeText">Live</span></div>
+      <div class="status-row"><span class="status-dot" id="statusTiktokDot"></span><span id="statusTiktokText">Auto-chat: not connected</span></div>
+    </div>
+
+    <h3 class="drawer-subhead">TikTok auto-chat</h3>
+    <p class="field-note">Optional — connects to your LIVE room and feeds real chat guesses straight into the game. Uses an unofficial method that can occasionally misbehave, so the manual boxes on the game screen always keep working as a backup.</p>
+    <div class="field">
+      <span class="field-label">Your TikTok username</span>
+      <div class="range-row">
+        <input id="tiktokUsername" type="text" class="field-input" placeholder="e.g. yourhandle (no @)" style="flex:1" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" />
+      </div>
+    </div>
+    <div class="settings-actions" style="flex-direction: row; gap: 8px;">
+      <button id="tiktokConnectBtn" class="primary-btn" style="flex:1">Connect</button>
+      <button id="tiktokDisconnectBtn" class="ghost-btn" style="flex:1">Disconnect</button>
+    </div>
+    <p id="tiktokStatus" class="field-note tiktok-status">Not connected — guesses must be typed manually.</p>
+
+    <hr class="divider" />
+
+    <label class="field">
+      <span class="field-label">Mode</span>
+      <select id="modeSelect" class="field-input">
+        <option value="live">Live — counts for chat leaderboard</option>
+        <option value="test">Test — practice, scores not saved</option>
+        <option value="offline">Offline — host plays solo</option>
+      </select>
+    </label>
+
+    <div class="field">
+      <span class="field-label">Trail length (hops between countries)</span>
+      <div class="range-row">
+        <input id="minHops" type="number" min="2" max="9" value="3" class="field-input small" />
+        <span class="range-sep">to</span>
+        <input id="maxHops" type="number" min="2" max="9" value="6" class="field-input small" />
+      </div>
+    </div>
+
+    <label class="field field-row">
+      <span class="field-label">Auto-continue after each round</span>
+      <input id="autoContinueToggle" type="checkbox" class="field-checkbox" checked />
+    </label>
+
+    <label class="field" id="autoContinueDelayField">
+      <span class="field-label">Delay before next round (seconds)</span>
+      <input id="autoContinueDelay" type="number" min="5" max="60" value="12" class="field-input small" />
+    </label>
+
+    <button id="applySettingsBtn" class="primary-btn" style="width:100%">Apply settings &amp; start new round</button>
+    <p class="field-note" id="applyNote">Changes here only take effect once you tap Apply.</p>
+
+    <hr class="divider" />
+
+    <h3 class="drawer-subhead">Scores</h3>
+    <div class="settings-actions">
+      <button id="resetTravleScores" class="danger-btn">Reset TRAVLE leaderboard</button>
+      <button id="resetTotalScores" class="danger-btn">Reset total leaderboard</button>
+    </div>
+  </div>
+</aside>
+
+<!-- ============ LEADERBOARD DRAWER ============ -->
+<aside class="drawer" id="leaderboardDrawer" aria-hidden="true">
+  <div class="drawer-head">
+    <h2>Leaderboard</h2>
+    <button class="icon-btn" id="closeLeaderboard" aria-label="Close leaderboard">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="tabs">
+      <button class="tab active" id="tabTravle" data-tab="travle">This game</button>
+      <button class="tab" id="tabTotal" data-tab="total">All games</button>
+    </div>
+    <ol class="leaderboard-list" id="leaderboardList"></ol>
+  </div>
+</aside>
+
+<!-- ============ LEGEND / HOW TO PLAY DRAWER ============ -->
+<aside class="drawer" id="legendDrawer" aria-hidden="true">
+  <div class="drawer-head">
+    <h2>How to play</h2>
+    <button class="icon-btn" id="closeLegend" aria-label="Close legend">✕</button>
+  </div>
+  <div class="drawer-body">
+    <p class="field-note">Two countries are picked — a start and a target. Chat calls out countries that could form a land-border chain between them. There's no guess limit, so keep them coming.</p>
+
+    <h3 class="drawer-subhead">Colors on the globe &amp; trail</h3>
+    <ul class="legend-list">
+      <li><span class="swatch swatch-endpoint"></span> Start &amp; target country</li>
+      <li><span class="swatch swatch-optimal"></span> On the shortest possible path — counts even before it connects to the trail</li>
+      <li><span class="swatch swatch-good"></span> Accepted guess — valid and connects, but a longer route</li>
+      <li><span class="swatch swatch-wrong"></span> Not on the shortest path and not connected to the trail</li>
+      <li><span class="swatch swatch-hint"></span> Outline hint — a valid next country, shape only</li>
+      <li><span class="swatch swatch-neutral"></span> Not yet guessed</li>
+    </ul>
+
+    <h3 class="drawer-subhead">Scoring</h3>
+    <ul class="legend-list">
+      <li><b>3 points</b> — the guess is on the shortest possible path, whether or not it's connected to the trail yet</li>
+      <li><b>1 point</b> — the guess is valid and connects, just not the optimal route</li>
+      <li><b>0 points</b> — the guess is neither on the optimal path nor connected yet</li>
+      <li>Both hints (outline shape, and initials) are free — use them as often as you like.</li>
+    </ul>
+  </div>
+</aside>
+
+<!-- ============ ROUND RESULT MODAL ============ -->
+<div class="modal" id="roundModal" aria-hidden="true">
+  <div class="modal-card">
+    <h2 id="modalTitle">Round complete</h2>
+    <p id="modalBody"></p>
+    <div class="modal-path-header">
+      <span>Your trail</span>
+      <span>Optimal trail</span>
+    </div>
+    <div class="modal-path" id="modalPath"></div>
+    <div class="modal-actions">
+      <button class="primary-btn" id="modalNextBtn">Next round</button>
+    </div>
+    <p class="modal-countdown" id="modalCountdown"></p>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+<script src="data.js"></script>
+<script src="coords.js"></script>
+<script src="globe.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

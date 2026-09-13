@@ -2,137 +2,79 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-<title>Flagle Live · Radar</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+<title>Live Game Platform</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css" />
+<style>
+  :root{
+    --navy-deep:#0A1826; --navy-panel:#10263B; --navy-line:#1E3A54;
+    --ink-hi:#EAF3FB; --ink-mid:#9FB6C9; --amber:#F2B84B; --violet:#B79CF2;
+    --font-head:"Space Grotesk",sans-serif; --font-body:"Inter",sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100vh;
+    background:radial-gradient(ellipse at 50% -10%, #163350 0%, var(--navy-deep) 55%);
+    color:var(--ink-hi); font-family:var(--font-body);
+    display:flex; align-items:center; justify-content:center; padding:24px;
+  }
+  .hub{ width:100%; max-width:480px; }
+  .hub-badge{
+    display:inline-block; font-family:var(--font-head); font-weight:700; font-size:12px;
+    letter-spacing:.14em; color:var(--navy-deep); background:var(--amber);
+    padding:4px 10px; border-radius:999px; margin-bottom:14px;
+  }
+  h1{ font-family:var(--font-head); font-weight:700; font-size:26px; margin:0 0 6px; }
+  .hub-sub{ color:var(--ink-mid); font-size:14.5px; line-height:1.55; margin:0 0 26px; }
+  .game-card{
+    display:block; text-decoration:none; color:inherit;
+    background:var(--navy-panel); border:1px solid var(--navy-line); border-radius:16px;
+    padding:20px; margin-bottom:14px; transition:border-color .15s ease, transform .1s ease;
+  }
+  .game-card:active{ transform:scale(.98); }
+  .game-card:hover{ border-color:var(--accent, var(--amber)); }
+  .game-icon{ font-size:28px; margin-bottom:8px; display:block; }
+  .game-name{ font-family:var(--font-head); font-weight:700; font-size:18px; margin:0 0 4px; }
+  .game-desc{ color:var(--ink-mid); font-size:13.5px; line-height:1.5; margin:0 0 12px; }
+  .game-tags{ display:flex; gap:6px; flex-wrap:wrap; }
+  .tag{
+    font-size:11px; font-weight:600; padding:3px 9px; border-radius:999px;
+    background:var(--navy-deep); color:var(--ink-mid); border:1px solid var(--navy-line);
+  }
+  .play-row{ display:flex; align-items:center; justify-content:space-between; margin-top:14px; }
+  .play-cta{
+    font-family:var(--font-head); font-weight:700; font-size:13px;
+    color:var(--accent, var(--amber));
+  }
+  .flagle-card{ --accent:#F2B84B; }
+  .travle-card{ --accent:#B79CF2; }
+  .hub-footer{ text-align:center; color:var(--ink-mid); font-size:12px; margin-top:22px; line-height:1.6; }
+</style>
 </head>
 <body>
+  <div class="hub">
+    <div class="hub-badge">TIKTOK LIVE GAMES</div>
+    <h1>Choose a game</h1>
+    <p class="hub-sub">Each game reads your TikTok LIVE chat directly — audience comments become guesses automatically. Pick one to open its own control board.</p>
 
-  <!-- ============ SETUP SCREEN ============ -->
-  <section id="setup-screen" class="screen">
-    <div class="setup-card">
-      <div class="setup-badge">FLAGLE · LIVE</div>
-      <h1>Choose how to play</h1>
+    <a class="game-card flagle-card" href="/flagle/">
+      <span class="game-icon">🚩</span>
+      <div class="game-name">Flagle Live</div>
+      <p class="game-desc">Guess the blurred flag before time runs out. Distance-and-direction hints, a live top-10 ticker, top likes &amp; gifters, and a host hint button.</p>
+      <div class="game-tags"><span class="tag">Live · Test · Offline</span><span class="tag">198 countries</span></div>
+      <div class="play-row"><span></span><span class="play-cta">Play Flagle →</span></div>
+    </a>
 
-      <div class="mode-tabs" id="mode-tabs">
-        <button type="button" class="mode-tab active" data-mode="live">📡 Live</button>
-        <button type="button" class="mode-tab" data-mode="test">🧪 Test</button>
-        <button type="button" class="mode-tab" data-mode="offline">🎮 Offline</button>
-      </div>
+    <a class="game-card travle-card" href="/travle/">
+      <span class="game-icon">🌍</span>
+      <div class="game-name">TRAVLE Live</div>
+      <p class="game-desc">Chat builds a land-border chain between two random countries on an interactive rotating globe. No guess limit — free outline and initial hints.</p>
+      <div class="game-tags"><span class="tag">Live · Test · Offline</span><span class="tag">Draggable 3D globe</span></div>
+      <div class="play-row"><span></span><span class="play-cta">Play TRAVLE →</span></div>
+    </a>
 
-      <!-- LIVE MODE -->
-      <div id="live-panel" class="mode-panel">
-        <p class="setup-sub">Enter the TikTok username that's currently LIVE. Chat guesses become the game — no controllers, no second device.</p>
-
-        <label class="field-label" for="tiktok-username">TikTok username</label>
-        <div class="input-row">
-          <span class="at-prefix">@</span>
-          <input id="tiktok-username" type="text" placeholder="yourusername" autocomplete="off" autocapitalize="off" spellcheck="false" />
-        </div>
-
-        <button id="connect-btn" class="primary-btn">Go live &amp; connect</button>
-
-        <ol class="setup-steps">
-          <li>Start your TikTok LIVE using <strong>Mobile Gaming</strong> mode, pointed at this browser tab.</li>
-          <li>Come back here and tap <strong>Go live &amp; connect</strong> — must be entered while you are already LIVE.</li>
-          <li>Viewers guess the country by typing its name in your live chat. That's it.</li>
-        </ol>
-      </div>
-
-      <!-- TEST MODE -->
-      <div id="test-panel" class="mode-panel hidden">
-        <p class="setup-sub">No TikTok needed. Rounds are shorter (15s) and the correct answer is shown in a small debug label, so you can quickly check the game works after any update.</p>
-        <button id="start-test-btn" class="primary-btn">Start test round</button>
-      </div>
-
-      <!-- OFFLINE MODE -->
-      <div id="offline-panel" class="mode-panel hidden">
-        <p class="setup-sub">No TikTok needed. Play at the normal pace, entirely by yourself — type your own guesses in the box at the bottom of the game screen.</p>
-        <button id="start-offline-btn" class="primary-btn">Start playing</button>
-      </div>
-
-      <p id="setup-status" class="setup-status"></p>
-    </div>
-  </section>
-
-  <!-- ============ GAME SCREEN ============ -->
-  <section id="game-screen" class="screen hidden">
-
-    <header class="topbar">
-      <div class="topbar-left">
-        <span class="mode-badge" id="mode-badge">LIVE</span>
-        <span class="topbar-title">FLAGLE LIVE</span>
-      </div>
-      <div class="round-timer" id="round-timer">45</div>
-      <div class="topbar-right">
-        <button type="button" id="fullscreen-btn" class="icon-btn" title="Toggle fullscreen">⛶</button>
-        <span id="heartbeat" class="heartbeat">🎧 0</span>
-        <span id="live-username">@—</span>
-      </div>
-    </header>
-
-    <div class="ticker-wrap" id="ticker-wrap">
-      <div class="ticker-track" id="ticker-track">Waiting for the first correct guess…</div>
-    </div>
-
-    <div class="radar-wrap">
-      <svg class="globe-grid" id="globe-grid" viewBox="0 0 200 200">
-        <circle cx="100" cy="100" r="97"/>
-        <ellipse cx="100" cy="100" rx="97" ry="38"/>
-        <ellipse cx="100" cy="100" rx="38" ry="97"/>
-        <ellipse cx="100" cy="100" rx="97" ry="70"/>
-        <line x1="3" y1="100" x2="197" y2="100"/>
-        <line x1="100" y1="3" x2="100" y2="197"/>
-        <circle class="blip" cx="60" cy="70" r="2.2"/>
-        <circle class="blip" cx="145" cy="60" r="2.2"/>
-        <circle class="blip" cx="130" cy="150" r="2.2"/>
-        <circle class="blip" cx="55" cy="135" r="2.2"/>
-      </svg>
-      <div class="radar-sweep" id="radar-sweep"></div>
-      <div class="flag-plate">
-        <img id="flag-image" alt="Guess this flag" />
-      </div>
-      <div class="guess-pips" id="guess-pips"></div>
-    </div>
-
-    <div class="hint-strip" id="hint-strip">
-      <span class="hint-icon">◎</span>
-      <span id="hint-text">Type the country name in chat to guess.</span>
-    </div>
-
-    <div class="debug-strip" id="debug-strip">
-      <span class="debug-label">last heard:</span>
-      <span id="debug-last">—</span>
-    </div>
-
-    <div class="board">
-      <div class="panel comment-panel">
-        <div class="panel-head">Live chat</div>
-        <div id="comment-feed" class="comment-feed"></div>
-      </div>
-
-      <div class="panel fans-panel">
-        <div class="panel-head fans-tabs">
-          <button type="button" class="fans-tab active" data-tab="likes">❤️ Likes</button>
-          <button type="button" class="fans-tab" data-tab="gifts">🎁 Gifts</button>
-        </div>
-        <ol id="fans-list" class="leaderboard"></ol>
-      </div>
-    </div>
-
-    <form id="host-form" class="host-bar" autocomplete="off">
-      <input id="host-input" type="text" placeholder="Type here to test a guess or chat as host…" />
-      <button type="submit">Send</button>
-      <button type="button" id="hint-btn" class="ghost-btn" title="Give the audience a hint">💡 Hint</button>
-      <button type="button" id="skip-btn" class="ghost-btn" title="Skip this round">Skip</button>
-    </form>
-
-    <div id="toast-layer"></div>
-  </section>
-
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="app.js"></script>
+    <p class="hub-footer">Each game is fully independent — its own screen, controls, and TikTok connection.<br/>Bookmark this page, or jump straight to a game's own link.</p>
+  </div>
 </body>
 </html>
